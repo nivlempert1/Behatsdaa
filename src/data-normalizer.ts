@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { parse } from 'csv-parse/sync';
+import yargs from 'yargs';
+import { hideBin } from 'yargs/helpers';
 
 interface ScrapedRow {
   'web-scraper-order': string;
@@ -50,7 +52,6 @@ export function normalizeData(inputFile: string, outputFile: string): void {
     }));
 
     const normalizedData = {
-      cartId,
       items: normalizedItems
     };
 
@@ -73,15 +74,27 @@ export function normalizeData(inputFile: string, outputFile: string): void {
 }
 
 if (require.main === module) {
-  const args = process.argv.slice(2);
-  
-  if (args.length < 1) {
-    console.error('Usage: npx ts-node src/data-normalizer.ts <input-csv-file> [output-json-file]');
-    process.exit(1);
-  }
+  const argv = yargs(hideBin(process.argv))
+    .usage('Usage: $0 [options]')
+    .option('input', {
+      alias: 'i',
+      describe: 'Input CSV file path',
+      type: 'string',
+      demandOption: true
+    })
+    .option('output', {
+      alias: 'o',
+      describe: 'Output JSON file path',
+      type: 'string'
+    })
+    .help()
+    .alias('help', 'h')
+    .example('$0 -i data.csv', 'Convert data.csv to data.json')
+    .example('$0 -i data.csv -o output.json', 'Convert data.csv to output.json')
+    .parseSync();
 
-  const inputFile = args[0];
-  const outputFile = args[1] || inputFile.replace(/\.csv$/, '.json');
+  const inputFile = argv.input;
+  const outputFile = argv.output || inputFile.replace(/\.csv$/, '.json');
 
   normalizeData(inputFile, outputFile);
 }
